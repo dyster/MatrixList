@@ -4,11 +4,12 @@ using System.Windows.Forms;
 
 namespace MatrixList
 {
+    /// <summary>
+    /// This marks a property as having a column in the matrix list.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class MatrixColumnAttribute : Attribute
     {
-        public string Name { get; }
-
         public MatrixColumnAttribute(string name, int columnWidth = -1, HorizontalAlignment horizontalAlignment = HorizontalAlignment.Left)
         {
             Name = name;
@@ -16,21 +17,20 @@ namespace MatrixList
             HorizontalAlignment = horizontalAlignment;
         }
 
+        /// <summary>
+        /// The width of the column in pixels, if set to -1 the width will be the listview default
+        /// </summary>
         public int ColumnWidth { get; }
+
+        /// <summary>
+        /// The horizontal alignment of the column content, default is left.
+        /// </summary>
         public HorizontalAlignment HorizontalAlignment { get; }
-    }
 
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
-    public class MatrixTransformAttribute : Attribute
-    {
-        public object Input { get; }
-        public MatrixCell Output { get; }
-
-        public MatrixTransformAttribute(object input, string text, KnownColor foreColor)
-        {
-            Input = input;
-            Output = new MatrixCell(text, Color.FromKnownColor(foreColor));
-        }
+        /// <summary>
+        /// This name will be used as the column header
+        /// </summary>
+        public string Name { get; }
     }
 
     /// <summary>
@@ -56,6 +56,21 @@ namespace MatrixList
     /// </summary>
     public class MatrixHighlightValueChanges : Attribute
     {
-        
+    }
+
+    /// <summary>
+    /// Applies a transformation of a value and/or formatting if it matches the input value. Use multiple attributes to create multiple transformations.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
+    public class MatrixTransformAttribute : Attribute
+    {
+        public MatrixTransformAttribute(object input, string text, KnownColor foreColor)
+        {
+            Input = input;
+            Output = new MatrixCell(text, Color.FromKnownColor(foreColor));
+        }
+
+        public object Input { get; }
+        public MatrixCell Output { get; }
     }
 }

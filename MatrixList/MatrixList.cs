@@ -181,12 +181,12 @@ namespace MatrixList
                             display = false;
                         }
                     }
-                    else if(col.HighlightChanges && e.ItemIndex > 0)
+                    else if (col.HighlightChanges && e.ItemIndex > 0)
                     {
                         previous = mlc.DataSource[e.ItemIndex - 1];
                     }
 
-                        var mCell = col.Transformer.Transform(item);
+                    var mCell = col.Transformer.Transform(item);
                     mCell.Font = this.Font;
 
                     if (!display)
@@ -275,27 +275,6 @@ namespace MatrixList
         }
     }
 
-    public class MatrixListController<T>(MatrixList matrixList) : IController
-    {
-        public IList<T> DataSource { get; set; }
-
-        public Color HighlightBackColor { get; set; } = Color.Lavender;
-        public Color HighlightForeColor { get; set; } = Color.Black;
-        public Font HighlightFont { get; set; } = new Font(matrixList.Font, FontStyle.Bold);
-
-        int IController.getListCount()
-        {
-            if (DataSource == null)
-                return 0;
-            return DataSource.Count;
-        }
-
-        /// <summary>
-        /// Add predicate to enable reverse value lookup for a column using the column id attribute and a predicate to find the value, the predicate is applied to each item backwards in the list until it returns true, this value is then used for any reverse lookup functions
-        /// </summary>
-        //public Dictionary<int, Predicate<T>> ColumnReverseLookup { get; set; } = new Dictionary<int, Predicate<T>>();
-    }
-
     public class MColumn<T>
     {
         public MColumn(PropertyInfo pInfo, MatrixColumnAttribute attr)
@@ -335,15 +314,5 @@ namespace MatrixList
         public Color BackColor { get; set; }
 
         public Font Font { get; set; }
-    }
-
-    public interface iTransformer
-    {
-        public MatrixCell Transform(object rowItem);
-    }
-
-    public interface IController
-    {
-        int getListCount();
     }
 }
