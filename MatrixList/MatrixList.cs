@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +12,7 @@ namespace MatrixList
 {
     public class MatrixList : ListView
     {
-        private IController _controller;
+        private IController _controller;        
 
         /// <summary>
         /// Holds a list of columns that should copy formatting from another column, the first value is the source column index and the second value is the target column index
@@ -20,13 +21,17 @@ namespace MatrixList
 
         private HeaderControl _headerControl;
 
+        private string _overlayText = "";
+        private bool _overlayTextSet = false;
+
         public MatrixList()
         {
-            DoubleBuffered = true;
-            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+            DoubleBuffered = true;     
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);            
             VirtualMode = true;
             View = View.Details;
             OwnerDraw = true;
+
         }
 
         public MatrixListController<T> Initialize<T>(Dictionary<int, Predicate<T>> predicates = null)
@@ -69,6 +74,12 @@ namespace MatrixList
             }
 
             colCount = 0;
+
+            if(_columns.Count == 0)
+            {
+                _overlayText = "No MatrixColumnAttributes have been found in the source";
+                _overlayTextSet = true;
+            }
 
             foreach (var indexColumnPair in _columns)
             {
@@ -291,7 +302,8 @@ namespace MatrixList
 
         public new void Invalidate()
         {
-            this.VirtualListSize = _controller.getListCount();
+            if(_controller != null)
+                this.VirtualListSize = _controller.getListCount();
             base.Invalidate();
         }
 
@@ -302,7 +314,22 @@ namespace MatrixList
         public override void Refresh()
         {
             base.Refresh();
-        }        
+        }
+
+        private static SolidBrush blackBrush = new SolidBrush(Color.Black);
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+
+            if(_overlayTextSet)
+            {
+                var y = ClientRectangle.Bottom / 2;
+                e.Graphics.DrawString(_overlayText, Font, blackBrush, new Point(5, y));
+            }
+            
+            
+            
+        }
     }
 
     public class MColumn<T>
