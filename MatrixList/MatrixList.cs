@@ -4,18 +4,21 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace MatrixList
 {
     public class MatrixList : ListView
     {
+        private IController _controller;
+
         /// <summary>
         /// Holds a list of columns that should copy formatting from another column, the first value is the source column index and the second value is the target column index
         /// </summary>
         private List<Tuple<int, int>> _copyFormatting = new List<Tuple<int, int>>();
 
-        private IController _controller;
+        private HeaderControl _headerControl;
 
         public MatrixList()
         {
@@ -80,8 +83,15 @@ namespace MatrixList
                 }
 
                 var theCurrentColumnCount = colCount++;
+                var ch = new ColumnHeader()
+                {
+                    Name = mColumn.Name,
+                    Text = mColumn.Name,
+                    Width = mColumn.Width,
+                    TextAlign = mColumn.HorizontalAlignment
+                };
 
-                Columns.Add(mColumn.Name, mColumn.Width, mColumn.HorizontalAlignment);
+                Columns.Add(ch);
 
                 if (predicates != null)
                 {
@@ -115,8 +125,28 @@ namespace MatrixList
                 }
             }
 
+            _headerControl = new HeaderControl(this);
+
             var mlc = new MatrixListController<T>(this);
             _controller = mlc;
+
+            _headerControl.ColumnRightClick += (sender, columnIndex) =>
+            {
+                var column = _columns[columnIndex];
+
+                var cm = new ContextMenuStrip();
+                cm.Items.Add("Sort A->Z", null, (s, e) =>
+                {
+                    
+                });
+                cm.Items.Add("Sort Z->A", null, (s, e) =>
+                {
+                    
+                });
+
+                cm.Show(Cursor.Position);
+
+            };
 
             this.RetrieveVirtualItem += (sender, e) =>
             {
@@ -272,7 +302,7 @@ namespace MatrixList
         public override void Refresh()
         {
             base.Refresh();
-        }
+        }        
     }
 
     public class MColumn<T>
@@ -285,34 +315,13 @@ namespace MatrixList
             HorizontalAlignment = attr.HorizontalAlignment;
         }
 
-        public string Name { get; set; }
-        public int Width { get; set; }
-        public HorizontalAlignment HorizontalAlignment { get; set; }
-
-        public iTransformer Transformer { get; set; }
-        public int UserId { get; set; }
         public Predicate<T>? DisplayPredicate { get; set; }
         public bool HighlightChanges { get; set; }
+        public HorizontalAlignment HorizontalAlignment { get; set; }
+        public string Name { get; set; }
         public PropertyInfo PropertyInfo { get; set; }
-    }
-
-    public class MatrixCell
-    {
-        public MatrixCell(string text)
-        {
-            Text = text;
-        }
-
-        public MatrixCell(string text, Color foreColor)
-        {
-            Text = text;
-            ForeColor = foreColor;
-        }
-
-        public string Text { get; set; }
-        public Color ForeColor { get; set; }
-        public Color BackColor { get; set; }
-
-        public Font Font { get; set; }
+        public iTransformer Transformer { get; set; }
+        public int UserId { get; set; }
+        public int Width { get; set; }
     }
 }
