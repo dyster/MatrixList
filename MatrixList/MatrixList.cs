@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -26,16 +27,27 @@ namespace MatrixList
 
         public MatrixList()
         {
-            DoubleBuffered = true;     
-            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);            
+            DoubleBuffered = true;
+            //SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
             VirtualMode = true;
             View = View.Details;
             OwnerDraw = true;
 
         }
 
-        public MatrixListController<T> Initialize<T>(Dictionary<int, Predicate<T>> predicates = null)
+        /// <summary>
+        /// Initialises the MatrixList for the specified type, the returned controller is then used for type specific control and setting the source
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="settings">Optional: Settings to pass to the MatrixList</param>
+        /// <param name="predicates">Optional: A list of predicates (conditions) for specific columns to determine if the value should be displayed, dictionary key is the column index</param>
+        /// <returns></returns>
+        public MatrixListController<T> Initialize<T>(MatrixSettings settings, Dictionary<int, Predicate<T>> predicates)
         {
+            if(settings == null)
+                settings = new MatrixSettings();
+
             var t = typeof(T);
             Columns.Clear();
             var _columns = new Dictionary<int, MColumn<T>>();
@@ -49,6 +61,8 @@ namespace MatrixList
 
             // maps the column ID from attributes to the "real" column index
             var columnIdIndexMap = new Dictionary<int, int>();
+
+            var discardedProperties = new List<PropertyInfo>();
 
             // first pass to find all column IDs
             foreach (var property in properties)
@@ -71,13 +85,31 @@ namespace MatrixList
                         col.UserId = idAttrib.Id;
                     }
                 }
+                else
+                    discardedProperties.Add(property);
+            }
+
+            // if this is set, we go over the remaining properties without MatrixColumnAttribute
+            if(settings.AutomaticColumnGeneration)
+            {
+                foreach(var property in discardedProperties)
+                {
+                    var theCurrentColumnCount = colCount++;
+                    var strsize = TextRenderer.MeasureText(property.Name, Font);
+                    var attr = new MatrixColumnAttribute(property.Name, strsize.Width+10);
+                    
+                    
+                    var col = new MColumn<T>(property, attr);
+                    _columns[theCurrentColumnCount] = col;                    
+                }
+                
             }
 
             colCount = 0;
 
             if(_columns.Count == 0)
             {
-                _overlayText = "No MatrixColumnAttributes have been found in the source";
+                _overlayText = "No Columns";
                 _overlayTextSet = true;
             }
 
@@ -158,27 +190,49 @@ namespace MatrixList
                 cm.Show(Cursor.Position);
 
             };
+            
+            ListViewItem doError(string message)
+            {
+                _overlayText = message;
+                _overlayTextSet = true;
+                Columns.Clear();
+                var ch = new ColumnHeader()
+                {
+                    Name = "Error",
+                    Text = "Error",
+                    Width = 500,
+                    TextAlign = HorizontalAlignment.Left
+                };
+                Columns.Add(ch);
+                return new ListViewItem(message);
+                
+            }
 
             this.RetrieveVirtualItem += (sender, e) =>
             {
                 if (mlc == null)
                 {
-                    e.Item = new ListViewItem("List has not been initialized");
+                    e.Item = doError("List has not been initialized");                    
                     return;
                 }
                 if (mlc.DataSource == null)
                 {
-                    e.Item = new ListViewItem("DataSource is null");
+                    e.Item = doError("DataSource is null");                    
                     return;
                 }
                 if (mlc.DataSource.Count == 0)
                 {
-                    e.Item = new ListViewItem("DataSource is empty");
+                    e.Item = doError("DataSource is empty");                    
                     return;
                 }
                 if (e.ItemIndex >= mlc.DataSource.Count)
                 {
-                    e.Item = new ListViewItem("An item has been requested that is outside the bounds of the list");
+                    e.Item = doError("An item has been requested that is outside the bounds of the list");                    
+                    return;
+                }
+                if (_columns.Count == 0)
+                {
+                    e.Item = doError("No columns have been defined for the list");                    
                     return;
                 }
 
@@ -319,6 +373,7 @@ namespace MatrixList
         private static SolidBrush blackBrush = new SolidBrush(Color.Black);
         protected override void OnPaint(PaintEventArgs e)
         {
+            // this is not currently happening as userdraw is off
             base.OnPaint(e);
 
             if(_overlayTextSet)
@@ -330,6 +385,16 @@ namespace MatrixList
             
             
         }
+    }
+        
+    public class MatrixSettings
+    {
+        /// <summary>
+        /// False (default) - Only MatrixColumn attributes on the datasource object will be used to generate columns in the list
+        /// True - Any property that does not have a MatrixColumn attribute will be automatically added (attributed properties will be displayed first)
+        /// </summary>
+        public bool AutomaticColumnGeneration { get; set; } = false;
+
     }
 
     public class MColumn<T>
