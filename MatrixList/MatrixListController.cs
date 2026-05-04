@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace MatrixList
 {
@@ -50,6 +51,22 @@ namespace MatrixList
         private void FilterList()
         {
             FilteredList = DataSource.Where(item => DisplayFilter(item)).ToList();
+        }
+
+        public void AutoAdjustColumnWidths(ColumnHeaderAutoResizeStyle resizeStyle)
+        {
+            if (matrixList.Columns.Count == 0)
+                return;
+
+            for(int i = 0; i < matrixList.Columns.Count; i++)
+            {
+                matrixList.AutoResizeColumn(i, resizeStyle);
+            }            
+        }
+
+        public void Invalidate()
+        {
+            matrixList.Invalidate();
         }
     }
 }
