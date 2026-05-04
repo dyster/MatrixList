@@ -5,8 +5,6 @@ using System.Linq;
 
 namespace MatrixList
 {
-    
-
     public interface IController
     {
         int getListCount();
@@ -18,13 +16,13 @@ namespace MatrixList
 
         public IList<T> DataSource
         {
-            get { return _dataSource; } 
-            set 
-            { 
-                _dataSource = value; 
-                if (DisplayFilter != null) 
-                    FilterList(); 
-            } 
+            get { return _dataSource; }
+            set
+            {
+                _dataSource = value;
+                if (DisplayFilter != null)
+                    FilterList();
+            }
         }
 
         public List<T> FilteredList { get; set; }

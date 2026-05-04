@@ -13,7 +13,7 @@ namespace MatrixList
 {
     public class MatrixList : ListView
     {
-        private IController _controller;        
+        private IController _controller;
 
         /// <summary>
         /// Holds a list of columns that should copy formatting from another column, the first value is the source column index and the second value is the target column index
@@ -33,7 +33,6 @@ namespace MatrixList
             VirtualMode = true;
             View = View.Details;
             OwnerDraw = true;
-
         }
 
         /// <summary>
@@ -44,9 +43,9 @@ namespace MatrixList
         /// <param name="filter">Optional: A predicate (condition) to determine if a row should be displayed</param>
         /// <param name="predicates">Optional: A list of predicates (conditions) for specific columns to determine if the value should be displayed, dictionary key is the column index</param>
         /// <returns></returns>
-        public MatrixListController<T> Initialize<T>(MatrixSettings? settings = null,Predicate<T>? filter = null, Dictionary<int, Predicate<T>>? predicates = null)
+        public MatrixListController<T> Initialize<T>(MatrixSettings? settings = null, Predicate<T>? filter = null, Dictionary<int, Predicate<T>>? predicates = null)
         {
-            if(settings == null)
+            if (settings == null)
                 settings = new MatrixSettings();
 
             var t = typeof(T);
@@ -91,24 +90,22 @@ namespace MatrixList
             }
 
             // if this is set, we go over the remaining properties without MatrixColumnAttribute
-            if(settings.AutomaticColumnGeneration)
+            if (settings.AutomaticColumnGeneration)
             {
-                foreach(var property in discardedProperties)
+                foreach (var property in discardedProperties)
                 {
                     var theCurrentColumnCount = colCount++;
                     var strsize = TextRenderer.MeasureText(property.Name, Font);
-                    var attr = new MatrixColumnAttribute(property.Name, strsize.Width+10);
-                    
-                    
+                    var attr = new MatrixColumnAttribute(property.Name, strsize.Width + 10);
+
                     var col = new MColumn<T>(property, attr);
-                    _columns[theCurrentColumnCount] = col;                    
+                    _columns[theCurrentColumnCount] = col;
                 }
-                
             }
 
             colCount = 0;
 
-            if(_columns.Count == 0)
+            if (_columns.Count == 0)
             {
                 _overlayText = "No Columns";
                 _overlayTextSet = true;
@@ -183,17 +180,14 @@ namespace MatrixList
                 var cm = new ContextMenuStrip();
                 cm.Items.Add("Sort A->Z", null, (s, e) =>
                 {
-                    
                 });
                 cm.Items.Add("Sort Z->A", null, (s, e) =>
                 {
-                    
                 });
 
                 cm.Show(Cursor.Position);
-
             };
-            
+
             ListViewItem doError(string message)
             {
                 _overlayText = message;
@@ -208,34 +202,33 @@ namespace MatrixList
                 };
                 Columns.Add(ch);
                 return new ListViewItem(message);
-                
             }
 
             this.RetrieveVirtualItem += (sender, e) =>
             {
                 if (mlc == null)
                 {
-                    e.Item = doError("List has not been initialized");                    
+                    e.Item = doError("List has not been initialized");
                     return;
                 }
                 if (mlc.DataSource == null)
                 {
-                    e.Item = doError("DataSource is null");                    
+                    e.Item = doError("DataSource is null");
                     return;
                 }
                 if (mlc.DataSource.Count == 0)
                 {
-                    e.Item = doError("DataSource is empty");                    
+                    e.Item = doError("DataSource is empty");
                     return;
                 }
                 if (e.ItemIndex >= mlc.DataSource.Count)
                 {
-                    e.Item = doError("An item has been requested that is outside the bounds of the list");                    
+                    e.Item = doError("An item has been requested that is outside the bounds of the list");
                     return;
                 }
                 if (_columns.Count == 0)
                 {
-                    e.Item = doError("No columns have been defined for the list");                    
+                    e.Item = doError("No columns have been defined for the list");
                     return;
                 }
 
@@ -367,7 +360,7 @@ namespace MatrixList
 
         public new void Invalidate()
         {
-            if(_controller != null)
+            if (_controller != null)
                 this.VirtualListSize = _controller.getListCount();
             base.Invalidate();
         }
@@ -382,22 +375,20 @@ namespace MatrixList
         }
 
         private static SolidBrush blackBrush = new SolidBrush(Color.Black);
+
         protected override void OnPaint(PaintEventArgs e)
         {
             // this is not currently happening as userdraw is off
             base.OnPaint(e);
 
-            if(_overlayTextSet)
+            if (_overlayTextSet)
             {
                 var y = ClientRectangle.Bottom / 2;
                 e.Graphics.DrawString(_overlayText, Font, blackBrush, new Point(5, y));
             }
-            
-            
-            
         }
     }
-        
+
     public class MatrixSettings
     {
         /// <summary>
@@ -405,7 +396,6 @@ namespace MatrixList
         /// True - Any property that does not have a MatrixColumn attribute will be automatically added (attributed properties will be displayed first)
         /// </summary>
         public bool AutomaticColumnGeneration { get; set; } = false;
-
     }
 
     public class MColumn<T>
