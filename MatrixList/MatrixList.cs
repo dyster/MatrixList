@@ -41,9 +41,10 @@ namespace MatrixList
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="settings">Optional: Settings to pass to the MatrixList</param>
+        /// <param name="filter">Optional: A predicate (condition) to determine if a row should be displayed</param>
         /// <param name="predicates">Optional: A list of predicates (conditions) for specific columns to determine if the value should be displayed, dictionary key is the column index</param>
         /// <returns></returns>
-        public MatrixListController<T> Initialize<T>(MatrixSettings settings, Dictionary<int, Predicate<T>> predicates)
+        public MatrixListController<T> Initialize<T>(MatrixSettings? settings = null,Predicate<T>? filter = null, Dictionary<int, Predicate<T>>? predicates = null)
         {
             if(settings == null)
                 settings = new MatrixSettings();
@@ -172,6 +173,8 @@ namespace MatrixList
 
             var mlc = new MatrixListController<T>(this);
             _controller = mlc;
+            if (filter != null)
+                mlc.DisplayFilter = filter;
 
             _headerControl.ColumnRightClick += (sender, columnIndex) =>
             {
@@ -236,7 +239,15 @@ namespace MatrixList
                     return;
                 }
 
-                var item = mlc.DataSource[e.ItemIndex];
+                T item;
+
+                if (filter != null)
+                {
+                    item = mlc.FilteredList[e.ItemIndex];
+                }
+                else
+                    item = mlc.DataSource[e.ItemIndex];
+
                 if (item == null)
                 {
                     e.Item = new ListViewItem("null");
