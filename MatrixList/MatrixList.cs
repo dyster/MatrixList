@@ -173,6 +173,7 @@ namespace MatrixList
             if (filter != null)
                 mlc.DisplayFilter = filter;
 
+            // TODO should this be moved to this.MouseUp for consistency?
             _headerControl.ColumnRightClick += (sender, columnIndex) =>
             {
                 var column = _columns[columnIndex];
@@ -211,35 +212,28 @@ namespace MatrixList
                     e.Item = doError("List has not been initialized");
                     return;
                 }
-                if (mlc.DataSource == null)
-                {
-                    e.Item = doError("DataSource is null");
-                    return;
-                }
-                if (mlc.DataSource.Count == 0)
-                {
-                    e.Item = doError("DataSource is empty");
-                    return;
-                }
-                if (e.ItemIndex >= mlc.DataSource.Count)
-                {
-                    e.Item = doError("An item has been requested that is outside the bounds of the list");
-                    return;
-                }
+                //if (mlc.DataSource == null)
+                //{
+                //    e.Item = doError("DataSource is null");
+                //    return;
+                //}
+                //if (mlc.DataSource.Count == 0)
+                //{
+                //    e.Item = doError("DataSource is empty");
+                //    return;
+                //}
+                //if (e.ItemIndex >= mlc.DataSource.Count)
+                //{
+                //    e.Item = doError("An item has been requested that is outside the bounds of the list");
+                //    return;
+                //}
                 if (_columns.Count == 0)
                 {
                     e.Item = doError("No columns have been defined for the list");
                     return;
                 }
 
-                T item;
-
-                if (filter != null)
-                {
-                    item = mlc.FilteredList[e.ItemIndex];
-                }
-                else
-                    item = mlc.DataSource[e.ItemIndex];
+                T item = mlc.GetItem(e.ItemIndex);
 
                 if (item == null)
                 {
@@ -261,7 +255,7 @@ namespace MatrixList
                             var lookup = e.ItemIndex - 1;
                             while (lookup >= 0)
                             {
-                                var candidate = mlc.DataSource[lookup];
+                                var candidate = mlc.GetItem(lookup);
                                 var success = col.DisplayPredicate.Invoke(candidate);
                                 if (!success)
                                 {
@@ -282,7 +276,7 @@ namespace MatrixList
                     }
                     else if (col.HighlightChanges && e.ItemIndex > 0)
                     {
-                        previous = mlc.DataSource[e.ItemIndex - 1];
+                        previous = mlc.GetItem(e.ItemIndex - 1);
                     }
 
                     var mCell = col.Transformer.Transform(item);
@@ -327,6 +321,115 @@ namespace MatrixList
             this.DrawColumnHeader += (sender, e) =>
             {
                 e.DrawDefault = true;
+            };
+
+            this.MouseUp += (sender, e) =>
+            {
+                if (e.Button == MouseButtons.Right)
+                {
+                    //var focusItem = this.FocusedItem;
+                    ListViewHitTestInfo listViewHitTestInfo = HitTest(e.Location);
+
+                    if (listViewHitTestInfo.Location == ListViewHitTestLocations.Label)
+                    {
+                        var item = listViewHitTestInfo.Item;
+                        var subitem = listViewHitTestInfo.SubItem;
+                        ColumnHeader column = null;
+                        MColumn<T> mColumn = null;
+
+                        for (int i = 0; i < item.SubItems.Count; i++)
+                        {
+                            if (item.SubItems[i] == subitem)
+                            {
+                                column = this.Columns[i];
+                                mColumn = _columns[i];
+                                break;
+                            }
+                        }
+
+                        if (column != null && subitem != null)
+                        {
+                            var cm = new ContextMenuStrip();
+                            int index = listViewHitTestInfo.Item.Index;
+                            cm.Items.Add("[" + column.Text + "]", null, (s, e) =>
+                            {
+                            });
+                            cm.Items.Add("[" + subitem.Text + "]", null, (s, e) =>
+                            {
+                            });
+                            cm.Items.Add(new ToolStripSeparator());
+                            cm.Items.Add("Copy to Clipboard", null, (s, e) =>
+                            {
+                                Clipboard.SetText(subitem.Text);
+                            });
+                            cm.Items.Add("Search up for different value", null, (s, e) =>
+                            {
+                                var lookup = index - 1;
+                                int go_to = -1;
+                                while (lookup >= 0)
+                                {
+                                    var candidate = mlc.GetItem(lookup);
+                                    var candidateCell = mColumn.Transformer.Transform(candidate);
+                                    if (candidateCell.Text == subitem.Text)
+                                    {
+                                        lookup--;
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        //MessageBox.Show("Found different value at index: " + lookup + " - " + candidateCell.Text);
+                                        go_to = lookup;
+                                        break;
+                                    }
+                                }
+                                if (go_to == -1)
+
+                                    MessageBox.Show("No differing value found");
+                                else
+                                {
+                                    this.EnsureVisible(go_to);
+                                    this.Items[go_to].Selected = true;
+                                    this.Items[go_to].Focused = true;
+                                }
+                            });
+                            cm.Items.Add("Search down for different value", null, (s, e) =>
+                            {
+                                var lookup = index + 1;
+                                int go_to = -1;
+                                // TODO implement lock mechanic or make list properly dynamic to deal with changes
+                                var max = _controller.getListCount();
+                                while (lookup < max)
+                                {
+                                    var candidate = mlc.GetItem(lookup);
+                                    //TODO this is ignoring the diplay predicate, either use predicate or use transform on current value first?
+                                    var candidateCell = mColumn.Transformer.Transform(candidate);
+                                    if (candidateCell.Text == subitem.Text)
+                                    {
+                                        lookup++;
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        //MessageBox.Show("Found different value at index: " + lookup + " - " + candidateCell.Text);
+                                        go_to = lookup;
+                                        break;
+                                    }
+                                }
+                                if (go_to == -1)
+
+                                    MessageBox.Show("No differing value found");
+                                else
+                                {
+                                    this.EnsureVisible(go_to);
+                                    this.Items[go_to].Selected = true;
+                                    this.Items[go_to].Focused = true;
+                                }
+                            });
+
+                            cm.Show(Cursor.Position);
+                        }
+                    }
+                }
             };
 
             this.DrawSubItem += (sender, e) =>

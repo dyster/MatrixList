@@ -14,19 +14,30 @@ namespace MatrixList
     public class MatrixListController<T>(MatrixList matrixList) : IController
     {
         private IList<T> _dataSource;
+        private List<T> _filteredList;
 
-        public IList<T> DataSource
+        public void SetDataSource(IList<T> dataSource)
         {
-            get { return _dataSource; }
-            set
-            {
-                _dataSource = value;
-                if (DisplayFilter != null)
-                    FilterList();
-            }
+            _dataSource = dataSource;
+            if (DisplayFilter != null)
+                FilterList();
         }
 
-        public List<T> FilteredList { get; set; }
+        public T GetItem(int itemIndex)
+        {
+            if (DisplayFilter != null)
+            {
+                if (itemIndex > _filteredList.Count - 1)
+                    return default;
+                return _filteredList[itemIndex];
+            }
+            else
+            {
+                if (itemIndex > _dataSource.Count - 1)
+                    return default;
+                return _dataSource[itemIndex];
+            }
+        }
 
         public Color HighlightBackColor { get; set; } = Color.Lavender;
         public Font HighlightFont { get; set; } = new Font(matrixList.Font, FontStyle.Bold);
@@ -36,21 +47,21 @@ namespace MatrixList
 
         int IController.getListCount()
         {
-            if (DataSource == null)
+            if (_dataSource == null)
                 return 0;
 
             if (DisplayFilter != null)
             {
                 FilterList();
-                return FilteredList.Count;
+                return _filteredList.Count;
             }
             else
-                return DataSource.Count;
+                return _dataSource.Count;
         }
 
         private void FilterList()
         {
-            FilteredList = DataSource.Where(item => DisplayFilter(item)).ToList();
+            _filteredList = _dataSource.Where(item => DisplayFilter(item)).ToList();
         }
 
         public void AutoAdjustColumnWidths(ColumnHeaderAutoResizeStyle resizeStyle)
@@ -58,15 +69,15 @@ namespace MatrixList
             if (matrixList.Columns.Count == 0)
                 return;
 
-            for(int i = 0; i < matrixList.Columns.Count; i++)
+            for (int i = 0; i < matrixList.Columns.Count; i++)
             {
                 matrixList.AutoResizeColumn(i, resizeStyle);
-            }            
+            }
         }
 
         public void Invalidate()
         {
             matrixList.Invalidate();
-        }
+        }        
     }
 }
