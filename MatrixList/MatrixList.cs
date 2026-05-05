@@ -362,61 +362,45 @@ namespace MatrixList
                             {
                                 Clipboard.SetText(subitem.Text);
                             });
-                            cm.Items.Add("Search up for different value", null, (s, e) =>
-                            {
-                                var lookup = index - 1;
-                                int go_to = -1;
-                                while (lookup >= 0)
-                                {
-                                    var candidate = mlc.GetItem(lookup);
-                                    var candidateCell = mColumn.Transformer.Transform(candidate);
-                                    if (candidateCell.Text == subitem.Text)
-                                    {
-                                        lookup--;
-                                        continue;
-                                    }
-                                    else
-                                    {
-                                        //MessageBox.Show("Found different value at index: " + lookup + " - " + candidateCell.Text);
-                                        go_to = lookup;
-                                        break;
-                                    }
-                                }
-                                if (go_to == -1)
 
-                                    MessageBox.Show("No differing value found");
-                                else
-                                {
-                                    this.EnsureVisible(go_to);
-                                    this.Items[go_to].Selected = true;
-                                    this.Items[go_to].Focused = true;
-                                }
-                            });
-                            cm.Items.Add("Search down for different value", null, (s, e) =>
+                            void search(int index, bool reverse)
                             {
-                                var lookup = index + 1;
+                                // first index to look up
+                                var lookup = reverse ? index - 1 : index + 1;
+
+                                // the result if found, -1 if not found
                                 int go_to = -1;
+
                                 // TODO implement lock mechanic or make list properly dynamic to deal with changes
                                 var max = _controller.getListCount();
-                                while (lookup < max)
+
+                                while (true)
                                 {
+                                    if (reverse && !(lookup >= 0))
+                                        break;
+                                    if (!reverse && !(lookup < max))
+                                        break;
+
                                     var candidate = mlc.GetItem(lookup);
                                     //TODO this is ignoring the diplay predicate, either use predicate or use transform on current value first?
                                     var candidateCell = mColumn.Transformer.Transform(candidate);
+
                                     if (candidateCell.Text == subitem.Text)
                                     {
-                                        lookup++;
+                                        if (reverse)
+                                            lookup--;
+                                        else
+                                            lookup++;
                                         continue;
                                     }
                                     else
                                     {
-                                        //MessageBox.Show("Found different value at index: " + lookup + " - " + candidateCell.Text);
                                         go_to = lookup;
                                         break;
                                     }
                                 }
-                                if (go_to == -1)
 
+                                if (go_to == -1)
                                     MessageBox.Show("No differing value found");
                                 else
                                 {
@@ -424,6 +408,15 @@ namespace MatrixList
                                     this.Items[go_to].Selected = true;
                                     this.Items[go_to].Focused = true;
                                 }
+                            }
+
+                            cm.Items.Add("Search up for different value", null, (s, e) =>
+                            {
+                                search(index, true);
+                            });
+                            cm.Items.Add("Search down for different value", null, (s, e) =>
+                            {
+                                search(index, false);
                             });
 
                             cm.Show(Cursor.Position);
