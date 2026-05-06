@@ -22,6 +22,9 @@ namespace MatrixList
         private string _overlayText = "";
         private bool _overlayTextSet = false;
 
+        private int _selectedRowIndex = -1;
+        private int _selectedColumnIndex = -1;
+
         public MatrixList()
         {
             DoubleBuffered = true;
@@ -322,15 +325,21 @@ namespace MatrixList
 
             this.MouseUp += (sender, e) =>
             {
+                ListViewHitTestInfo listViewHitTestInfo = HitTest(e.Location);
+
+                if (listViewHitTestInfo.Location == ListViewHitTestLocations.Label)
+                {
+                    _selectedRowIndex = listViewHitTestInfo.Item.Index;
+                    _selectedColumnIndex = listViewHitTestInfo.Item.SubItems.IndexOf(listViewHitTestInfo.SubItem);
+                }
+
                 if (e.Button == MouseButtons.Right)
                 {
-                    //var focusItem = this.FocusedItem;
-                    ListViewHitTestInfo listViewHitTestInfo = HitTest(e.Location);
-
                     if (listViewHitTestInfo.Location == ListViewHitTestLocations.Label)
                     {
                         var item = listViewHitTestInfo.Item;
                         var subitem = listViewHitTestInfo.SubItem;
+
                         ColumnHeader column = null;
                         MColumn<T> mColumn = null;
 
@@ -420,6 +429,8 @@ namespace MatrixList
                         }
                     }
                 }
+
+                this.Invalidate();
             };
 
             var alternateLineBrush = new SolidBrush(settings.AlternateLineColour);
@@ -439,6 +450,7 @@ namespace MatrixList
             };
 
             var whiteARGB = Color.White.ToArgb();
+            var borderPen = new Pen(new SolidBrush(Color.Black), 4);
 
             this.DrawSubItem += (sender, e) =>
             {
@@ -454,7 +466,8 @@ namespace MatrixList
                 if (e.SubItem.BackColor.ToArgb() != whiteARGB)
                     e.Graphics.FillRectangle(new SolidBrush(e.SubItem.BackColor), e.Bounds);
 
-                //e.Graphics.DrawRectangle(new Pen(new SolidBrush(e.SubItem.BackColor), 3), e.Bounds);
+                if (_selectedRowIndex == e.ItemIndex && _selectedColumnIndex == e.ColumnIndex)
+                    e.Graphics.DrawRectangle(borderPen, e.Bounds);
 
                 e.Graphics.DrawString(text, font, textbrush, location);
                 //var size = e.Graphics.MeasureString("Somefilename/", this.Font);
@@ -465,6 +478,14 @@ namespace MatrixList
 
                 //location.X += size.Width;
                 //e.Graphics.DrawString("/etc", this.Font, Brushes.Black, location);
+            };
+
+            this.ItemSelectionChanged += (sender, e) =>
+            {
+            };
+
+            this.SelectedIndexChanged += (sender, e) =>
+            {
             };
 
             return mlc;
