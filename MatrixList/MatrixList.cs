@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.Common;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace MatrixList
@@ -425,6 +422,24 @@ namespace MatrixList
                 }
             };
 
+            var alternateLineBrush = new SolidBrush(settings.AlternateLineColour);
+
+            this.DrawItem += (sender, e) =>
+            {
+                if ((e.ItemIndex % 2) == 1)
+                {
+                    e.Graphics.FillRectangle(alternateLineBrush, e.Bounds);
+                }
+
+                //e.DrawDefault = true;
+                //return;
+
+                //e.Graphics.DrawRectangle(new Pen(new SolidBrush(e.Item.BackColor), 3), e.Bounds);
+                //e.Graphics.DrawString(e.Item.Text, e.Item.Font, new SolidBrush(e.Item.ForeColor), e.Bounds.Location);
+            };
+
+            var whiteARGB = Color.White.ToArgb();
+
             this.DrawSubItem += (sender, e) =>
             {
                 //e.DrawDefault = true;
@@ -436,8 +451,9 @@ namespace MatrixList
                 //var boldFont = new Font(this.Font, FontStyle.Bold);
                 var location = new PointF(e.Bounds.Location.X, e.Bounds.Location.Y);
 
-                if (e.SubItem.BackColor != Color.White)
+                if (e.SubItem.BackColor.ToArgb() != whiteARGB)
                     e.Graphics.FillRectangle(new SolidBrush(e.SubItem.BackColor), e.Bounds);
+
                 //e.Graphics.DrawRectangle(new Pen(new SolidBrush(e.SubItem.BackColor), 3), e.Bounds);
 
                 e.Graphics.DrawString(text, font, textbrush, location);
@@ -492,6 +508,8 @@ namespace MatrixList
         /// True - Any property that does not have a MatrixColumn attribute will be automatically added (attributed properties will be displayed first)
         /// </summary>
         public bool AutomaticColumnGeneration { get; set; } = false;
+
+        public Color AlternateLineColour { get; set; } = Color.FromArgb(235, 235, 255);
     }
 
     public class MColumn<T>
